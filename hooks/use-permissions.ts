@@ -21,6 +21,7 @@ export function usePermissions() {
     canAny: (permissions: PermissionKey[]) => hasAnyPermission(user, permissions),
     canAll: (permissions: PermissionKey[]) => hasAllPermissions(user, permissions),
     hasRole: (role: WorkshopRole) => hasRole(user, role),
+    isSuperAdmin: () => hasRole(user, 'SuperAdmin' as WorkshopRole),
     isAdmin: () => hasRole(user, 'Admin' as WorkshopRole),
     isManager: () => hasRole(user, 'Manager' as WorkshopRole),
     isSupervisor: () => hasRole(user, 'Supervisor' as WorkshopRole),

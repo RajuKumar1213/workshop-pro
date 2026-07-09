@@ -110,6 +110,16 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Settings,
         requiredPermission: PERMISSIONS.SETTINGS.VIEW,
       },
+      {
+        label: 'Product Masters',
+        href: '/settings/product-masters',
+        icon: Settings,
+      },
+      {
+        label: 'Material Specs',
+        href: '/settings/materials',
+        icon: Settings,
+      }
     ],
   },
 ];

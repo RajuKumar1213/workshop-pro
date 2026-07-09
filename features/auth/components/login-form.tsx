@@ -100,6 +100,15 @@ export function LoginForm() {
             )}
             Sign In
           </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            disabled={isLoading}
+            onClick={() => form.setValue('email', 'superadmin@workshop.pro')}
+            className="mt-2"
+          >
+            Use Super Admin Credentials
+          </Button>
         </div>
       </form>
     </div>

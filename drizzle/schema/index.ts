@@ -11,3 +11,5 @@ export * from './canvas';
 export * from './design-templates';
 export * from './order-attachments';
 export * from './order-activities';
+export * from './product-masters';
+export * from './materials';

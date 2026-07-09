@@ -1,0 +1,76 @@
+import { EditorCanvas } from './EditorCanvas';
+import { EditorToolbar } from './EditorToolbar';
+import { useEditorStore } from '../store/useEditorStore';
+import { Maximize2, Minus, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
+
+interface AnnotationEditorProps {
+  imageUrl?: string;
+  className?: string;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  unit?: string;
+  holfass?: {
+    side: 'none' | 'left' | 'right' | 'both';
+    left: { top: number | ''; middle: number | ''; bottom: number | '' };
+    right: { top: number | ''; middle: number | ''; bottom: number | '' };
+  };
+}
+
+export function AnnotationEditor({ imageUrl, className = '', canvasWidth, canvasHeight, unit, holfass }: AnnotationEditorProps) {
+  const { scale, setScale, setPosition, undo, redo } = useEditorStore();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z' || e.key === 'Z') {
+          if (e.shiftKey) {
+            e.preventDefault();
+            redo();
+          } else {
+            e.preventDefault();
+            undo();
+          }
+        } else if (e.key === 'y' || e.key === 'Y') {
+          e.preventDefault();
+          redo();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
+
+  const handleZoomIn = () => setScale(Math.min(10, scale * 1.2));
+  const handleZoomOut = () => setScale(Math.max(0.1, scale / 1.2));
+  const handleReset = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  return (
+    <div className={`relative w-full h-[600px] flex flex-col ${className}`}>
+      <EditorToolbar />
+      
+      {/* Zoom Controls */}
+      <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-background/95 backdrop-blur shadow-md border rounded-lg p-1 z-50">
+        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-md" onClick={handleZoomOut}>
+          <Minus className="w-4 h-4" />
+        </Button>
+        <span className="text-xs font-medium w-12 text-center text-foreground">
+          {Math.round(scale * 100)}%
+        </span>
+        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-md" onClick={handleZoomIn}>
+          <Plus className="w-4 h-4" />
+        </Button>
+        <div className="w-px h-4 bg-border mx-1"></div>
+        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-md" onClick={handleReset} title="Reset View">
+          <Maximize2 className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <EditorCanvas imageUrl={imageUrl} canvasWidth={canvasWidth} canvasHeight={canvasHeight} unit={unit} holfass={holfass} />
+    </div>
+  );
+}
