@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings2, Ruler } from 'lucide-react';
 import { AnnotationEditor } from '@/features/editor/components/AnnotationEditor';
+import { MobileHeader } from '@/components/layout/mobile-header';
+import { Button } from '@/components/ui/button';
 
 interface DesignStepProps {
   onNext: (data: any) => void;
@@ -20,8 +21,12 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
   const [height, setHeight] = useState<number | string>(defaultData?.height ?? 0);
   const [material, setMaterial] = useState(defaultData?.material || 'Mild Steel');
   const [materialsList, setMaterialsList] = useState<any[]>([]);
+  const [hasVentilator, setHasVentilator] = useState(defaultData?.hasVentilator || false);
+  const [ventilatorImageUrl, setVentilatorImageUrl] = useState<string>(defaultData?.ventilatorImageUrl || '');
+  const [ventilatorImages, setVentilatorImages] = useState<any[]>([]);
 
   useEffect(() => {
+    // Fetch materials
     fetch('/api/masters/materials')
       .then(res => res.json())
       .then(data => {
@@ -29,6 +34,19 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
           setMaterialsList(data.data);
           if (!defaultData?.material && data.data.length > 0) {
             setMaterial(data.data[0].name);
+          }
+        }
+      })
+      .catch(console.error);
+
+    // Fetch ventilator images from products master
+    fetch('/api/masters/products')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const vent = data.data.find((m: any) => m.category.toLowerCase().includes('ventilator'));
+          if (vent && vent.images) {
+            setVentilatorImages(vent.images);
           }
         }
       })
@@ -44,146 +62,235 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
     left: { top: '', middle: '', bottom: '' },
     right: { top: '', middle: '', bottom: '' }
   });
+  const [kabja, setKabja] = useState<'none' | 'left' | 'right'>(defaultData?.kabja || 'none');
 
   const handleProceed = () => {
-    // In later steps, we will extract the drawing data from the AnnotationEditor
-    // For now, we proceed with the dimensions
-    onNext({ design: { width, height, unit, material, templateId: category, holfass } });
+    onNext({ design: { width, height, unit, material, templateId: category, holfass, kabja, hasVentilator, ventilatorImageUrl } });
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between border-b pb-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Canvas & Dimensions</h2>
-          <p className="text-muted-foreground text-sm mt-1">Configure measurements and specifications for this item.</p>
-        </div>
-        <span className="bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm border border-primary/20">
-          {category}
-        </span>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-2">
-        {/* Canvas Area (New Annotation Editor) */}
-        <div className="lg:col-span-2 relative h-[600px]">
-          <AnnotationEditor imageUrl={productData?.imageUrl} canvasWidth={Number(width) || 0} canvasHeight={Number(height) || 0} unit={unit} holfass={holfass} />
+    <div className="relative flex-1 w-full h-full flex flex-col font-sans select-none overflow-hidden bg-background">
+      <MobileHeader 
+        title="Canvas" 
+        onBack={onBack} 
+        rightAction={
+          <Button variant="ghost" size="icon" onClick={handleProceed} className="text-primary hover:bg-surface-container-low w-10 h-10 rounded-full">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+          </Button>
+        } 
+      />
+
+      {/* Desktop Top Bar (Hidden on Mobile) */}
+      <header className="hidden md:flex bg-surface border-b border-outline-variant justify-between items-center px-container-margin h-16 shrink-0 z-20 relative">
+        <button onClick={onBack} aria-label="Back" className="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors active:scale-95">
+          <span className="material-symbols-outlined">arrow_back</span>
+        </button>
+        <h1 className="font-headline-sm text-headline-sm text-on-surface text-center flex-1">Canvas</h1>
+        <button onClick={handleProceed} aria-label="Save" className="w-11 h-11 flex items-center justify-center text-primary hover:bg-surface-variant rounded-full transition-colors active:scale-95">
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+        </button>
+      </header>
+
+      {/* Main Workspace Area */}
+      <main className="flex-1 relative overflow-hidden flex flex-col md:flex-row bg-surface">
+        
+        {/* Canvas Area (Left) */}
+        <div className="relative flex-1 flex flex-col overflow-hidden bg-background">
+          {/* Floating Toolbar (Left) */}
+          <div className="absolute top-md left-md bg-surface border border-outline-variant rounded-lg flex flex-col p-1 shadow-sm z-10 hidden md:flex">
+            <button className="w-10 h-10 flex items-center justify-center text-primary bg-primary-fixed hover:bg-primary-fixed-dim rounded-md transition-colors" title="Grid">
+              <span className="material-symbols-outlined">grid_on</span>
+            </button>
+          </div>
+
+          {/* The CAD Object Canvas */}
+          <div className="relative flex-1 flex items-center justify-center z-0">
+             <div className="w-full h-full flex items-center justify-center">
+               <AnnotationEditor imageUrl={productData?.imageUrl} canvasWidth={Number(width) || 0} canvasHeight={Number(height) || 0} unit={unit} holfass={holfass} kabja={kabja} hasVentilator={hasVentilator} ventilatorImageUrl={ventilatorImageUrl} />
+             </div>
+          </div>
         </div>
 
-        {/* Controls */}
-        <div className="space-y-6">
-          <div className="bg-card p-6 rounded-2xl border shadow-sm space-y-5 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold flex items-center text-lg"><Settings2 className="w-5 h-5 mr-2 text-primary" /> Dimensions</h3>
-              
-              {/* Unit Selector */}
-              <div className="flex items-center gap-2">
-                <Ruler className="w-4 h-4 text-muted-foreground" />
-                <select 
-                  className="bg-muted text-xs font-semibold px-2 py-1.5 rounded-md outline-none focus:ring-2 focus:ring-primary/50 border"
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                >
-                  {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
-              </div>
-            </div>
+        {/* Bottom Sheet / Side Panel */}
+        <div className="w-full md:w-[400px] lg:w-[450px] bg-surface border-t md:border-t-0 md:border-l border-outline-variant md:rounded-br-xl md:rounded-bl-none z-20 flex flex-col h-1/2 md:h-full shrink-0">
+
+          {/* Sheet Content Header */}
+          <div className="px-container-margin pt-4 pb-4 flex justify-between items-end border-b border-surface-variant shrink-0">
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">Properties</h2>
+            <span className="font-label-sm text-label-sm text-primary bg-primary-fixed px-2 py-1 rounded">Selected: {category}</span>
+          </div>
+
+          {/* Sheet Content Body (Scrollable) */}
+          <div className="flex-1 overflow-y-auto px-container-margin py-4 flex flex-col gap-md pb-12">
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-2">
-                  Width <span className="text-gray-700 normal-case font-medium">({unit})</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center justify-between">
+                  Height <span>({unit})</span>
                 </label>
-                <input type="number" min="0" className="w-full p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" value={width} onFocus={(e) => e.target.select()} onChange={(e) => setWidth(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))} />
+                <input 
+                  type="number" min="0" 
+                  className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow" 
+                  value={height} onFocus={(e) => e.target.select()} onChange={(e) => setHeight(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))} 
+                />
               </div>
-
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-2">
-                  Height <span className="text-gray-700 normal-case font-medium">({unit})</span>
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center justify-between">
+                  Width <span>({unit})</span>
                 </label>
-                <input type="number" min="0" className="w-full p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" value={height} onFocus={(e) => e.target.select()} onChange={(e) => setHeight(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))} />
+                <input 
+                  type="number" min="0" 
+                  className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow" 
+                  value={width} onFocus={(e) => e.target.select()} onChange={(e) => setWidth(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))} 
+                />
               </div>
-            </div>
-          </div>
 
-          {/* Holfass Specs */}
-          <div className="bg-card p-6 rounded-2xl border shadow-sm space-y-4">
-            <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Holfass Specs</h3>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Location</label>
-              <div className="flex flex-wrap gap-4">
-                {['none', 'left', 'right', 'both'].map((s) => (
-                  <label key={s} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="holfass" value={s} checked={holfass.side === s} onChange={(e) => setHolfass({ ...holfass, side: e.target.value as any })} className="accent-primary" />
-                    <span className="text-sm capitalize">{s}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {(holfass.side === 'left' || holfass.side === 'both') && (
-              <div className="pt-2 border-t">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-2">Left Side</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div>
-                    <span className="text-xs text-muted-foreground mb-1 block">Top</span>
-                    <input type="number" min="0" className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none" value={holfass.left.top} onChange={(e) => setHolfass({ ...holfass, left: { ...holfass.left, top: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } })} />
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground mb-1 block">Middle</span>
-                    <input type="number" min="0" className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none" value={holfass.left.middle} onChange={(e) => setHolfass({ ...holfass, left: { ...holfass.left, middle: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } })} />
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground mb-1 block">Bottom</span>
-                    <input type="number" min="0" className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none" value={holfass.left.bottom} onChange={(e) => setHolfass({ ...holfass, left: { ...holfass.left, bottom: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } })} />
-                  </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Unit</label>
+                <div className="relative">
+                  <select 
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 font-body-md text-body-md text-on-surface appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow"
+                    value={unit} onChange={(e) => setUnit(e.target.value)}
+                  >
+                    {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
                 </div>
               </div>
-            )}
 
-            {(holfass.side === 'right' || holfass.side === 'both') && (
-              <div className="pt-2 border-t">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-2">Right Side</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div>
-                    <span className="text-xs text-muted-foreground mb-1 block">Top</span>
-                    <input type="number" min="0" className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none" value={holfass.right.top} onChange={(e) => setHolfass({ ...holfass, right: { ...holfass.right, top: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } })} />
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground mb-1 block">Middle</span>
-                    <input type="number" min="0" className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none" value={holfass.right.middle} onChange={(e) => setHolfass({ ...holfass, right: { ...holfass.right, middle: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } })} />
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground mb-1 block">Bottom</span>
-                    <input type="number" min="0" className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-primary focus:border-primary outline-none" value={holfass.right.bottom} onChange={(e) => setHolfass({ ...holfass, right: { ...holfass.right, bottom: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } })} />
-                  </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Material</label>
+                <div className="relative">
+                  <select 
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 font-body-md text-body-md text-on-surface appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow"
+                    value={material} onChange={(e)=>setMaterial(e.target.value)}
+                  >
+                    {materialsList.length === 0 ? (
+                      <option value="Mild Steel">Mild Steel</option>
+                    ) : (
+                      materialsList.map(m => (
+                        <option key={m.id} value={m.name}>{m.name}</option>
+                      ))
+                    )}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="bg-card p-6 rounded-2xl border shadow-sm space-y-4">
-            <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Material Specs</h3>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Primary Material</label>
-              <select className="w-full p-2.5 border rounded-lg bg-background text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all shadow-sm" value={material} onChange={(e)=>setMaterial(e.target.value)}>
-                {materialsList.length === 0 ? (
-                  <option value="Mild Steel">Mild Steel</option>
-                ) : (
-                  materialsList.map(m => (
-                    <option key={m.id} value={m.name}>{m.name}</option>
-                  ))
+            {/* Ventilator Section */}
+            {!category.toLowerCase().includes('window') && !category.toLowerCase().includes('railing') && (
+              <div className="flex flex-col gap-1 mt-2">
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gate Ventilator</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                   <button 
+                     type="button" 
+                     onClick={() => setHasVentilator(true)} 
+                     className={`flex-1 min-w-[70px] py-2 border font-label-md text-label-md rounded-lg active:scale-95 transition-transform capitalize ${hasVentilator ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-surface text-on-surface hover:bg-surface-variant'}`}
+                   >Yes</button>
+                   <button 
+                     type="button" 
+                     onClick={() => { setHasVentilator(false); setVentilatorImageUrl(''); }} 
+                     className={`flex-1 min-w-[70px] py-2 border font-label-md text-label-md rounded-lg active:scale-95 transition-transform capitalize ${!hasVentilator ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-surface text-on-surface hover:bg-surface-variant'}`}
+                   >No</button>
+                </div>
+                
+                {hasVentilator && ventilatorImages.length > 0 && (
+                  <div className="mt-2 p-3 bg-surface-container-lowest border rounded-xl shadow-sm">
+                     <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 block">Select Ventilator Design</label>
+                     <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                       {ventilatorImages.map(img => (
+                          <div 
+                            key={img.id} 
+                            onClick={() => setVentilatorImageUrl(img.imageUrl)}
+                            className={`relative w-20 h-20 shrink-0 border-2 rounded-lg cursor-pointer overflow-hidden snap-center transition-all ${ventilatorImageUrl === img.imageUrl ? 'border-primary shadow-md scale-95' : 'border-outline-variant hover:border-primary/50'}`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={img.imageUrl} className="w-full h-full object-cover" alt="Ventilator design" />
+                            {ventilatorImageUrl === img.imageUrl && (
+                              <div className="absolute top-1 right-1 bg-primary text-white rounded-full w-4 h-4 flex items-center justify-center shadow">
+                                <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                              </div>
+                            )}
+                          </div>
+                       ))}
+                     </div>
+                  </div>
                 )}
-              </select>
+              </div>
+            )}
+
+            {/* Kabja Section */}
+            <div className="flex flex-col gap-1 mt-2">
+              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Kabja (Hinges)</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                 {['none', 'left', 'right'].map((side) => (
+                    <button 
+                      key={side}
+                      type="button"
+                      onClick={() => setKabja(side as any)}
+                      className={`flex-1 min-w-[70px] py-2 border font-label-md text-label-md rounded-lg active:scale-95 transition-transform capitalize ${
+                        kabja === side ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-surface text-on-surface hover:bg-surface-variant'
+                      }`}
+                    >
+                      {side}
+                    </button>
+                 ))}
+              </div>
             </div>
+
+            {/* Holfass Section */}
+            <div className="flex flex-col gap-1 mt-2">
+              <div className="flex items-center justify-between">
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Holfass Options</label>
+                {(holfass.side === 'left' || holfass.side === 'right' || holfass.side === 'both') && (
+                  <button 
+                    onClick={() => setHolfass(prev => ({ ...prev, left: prev.right, right: prev.left, side: prev.side === 'left' ? 'right' : prev.side === 'right' ? 'left' : prev.side }))}
+                    className="text-xs text-primary flex items-center gap-1 hover:underline"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">swap_horiz</span> Swap Sides
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2 mb-2">
+                 {['none', 'left', 'right', 'both'].map((side) => (
+                    <button 
+                      key={side}
+                      type="button"
+                      onClick={() => setHolfass(prev => ({ ...prev, side: side as any }))}
+                      className={`flex-1 min-w-[70px] py-2 border font-label-md text-label-md rounded-lg active:scale-95 transition-transform capitalize ${
+                        holfass.side === side ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-surface text-on-surface hover:bg-surface-variant'
+                      }`}
+                    >
+                      {side}
+                    </button>
+                 ))}
+              </div>
+              
+              {/* Left Holfass Inputs */}
+              {(holfass.side === 'left' || holfass.side === 'both') && (
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="col-span-3 font-label-sm text-label-sm text-on-surface-variant">Left Side ({unit})</div>
+                  <input type="number" min="0" placeholder="Bottom" className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" value={holfass.left.bottom} onChange={(e) => setHolfass(prev => ({ ...prev, left: { ...prev.left, bottom: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } }))} />
+                  <input type="number" min="0" placeholder="Middle" className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" value={holfass.left.middle} onChange={(e) => setHolfass(prev => ({ ...prev, left: { ...prev.left, middle: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } }))} />
+                  <input type="number" min="0" placeholder="Top" className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" value={holfass.left.top} onChange={(e) => setHolfass(prev => ({ ...prev, left: { ...prev.left, top: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } }))} />
+                </div>
+              )}
+
+              {/* Right Holfass Inputs */}
+              {(holfass.side === 'right' || holfass.side === 'both') && (
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="col-span-3 font-label-sm text-label-sm text-on-surface-variant">Right Side ({unit})</div>
+                  <input type="number" min="0" placeholder="Bottom" className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" value={holfass.right.bottom} onChange={(e) => setHolfass(prev => ({ ...prev, right: { ...prev.right, bottom: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } }))} />
+                  <input type="number" min="0" placeholder="Middle" className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" value={holfass.right.middle} onChange={(e) => setHolfass(prev => ({ ...prev, right: { ...prev.right, middle: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } }))} />
+                  <input type="number" min="0" placeholder="Top" className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" value={holfass.right.top} onChange={(e) => setHolfass(prev => ({ ...prev, right: { ...prev.right, top: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) } }))} />
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
-      </div>
-
-      <div className="flex justify-between pt-6 mt-4">
-        <button type="button" onClick={onBack} className="px-8 py-2.5 border-2 rounded-xl hover:bg-muted font-semibold transition-all">Back</button>
-        <button type="button" onClick={handleProceed} className="bg-primary text-primary-foreground px-8 py-2.5 rounded-xl font-semibold hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-lg hover:shadow-xl">Save Dimensions & Next</button>
-      </div>
+      </main>
     </div>
   );
 }

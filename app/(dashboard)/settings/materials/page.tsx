@@ -141,7 +141,7 @@ export default function MaterialsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Add Material Section */}
         <div className="space-y-6">
-          <div className="bg-card border rounded-lg p-5 space-y-4 shadow-sm h-fit">
+          <div className="bg-surface border border-outline-variant rounded-xl p-md space-y-4 shadow-sm h-fit">
             <h3 className="font-semibold text-lg">Add Material</h3>
             <div className="space-y-3">
               <div>
@@ -172,7 +172,7 @@ export default function MaterialsPage() {
         </div>
 
         {/* Materials List */}
-        <div className="md:col-span-2 bg-card border rounded-lg p-5 shadow-sm min-h-[400px]">
+        <div className="md:col-span-2 bg-surface border border-outline-variant rounded-xl p-md shadow-sm min-h-[400px]">
           <div className="flex justify-between items-center mb-6 border-b pb-4">
             <h3 className="font-semibold text-lg">Existing Materials</h3>
             <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
@@ -187,7 +187,7 @@ export default function MaterialsPage() {
           ) : materials.length > 0 ? (
             <div className="space-y-3">
               {materials.map((m) => (
-                <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div key={m.id} className="flex items-center justify-between p-3 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors bg-surface">
                   {editingId === m.id ? (
                     <div className="flex-1 flex gap-2 items-start">
                       <div className="flex-1 space-y-2">

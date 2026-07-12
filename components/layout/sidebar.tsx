@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils/cn";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { ThemeToggle } from "@/components/common/theme-toggle";
 
 function SidebarSection({
   section,
@@ -48,10 +49,10 @@ function SidebarSection({
             return (
               <Button
                 key={item.href}
-                variant={isActive ? "secondary" : "ghost"}
+                variant="ghost"
                 className={cn(
-                  "justify-start",
-                  isActive ? "bg-secondary font-medium" : "text-muted-foreground font-normal"
+                  "justify-start rounded-xl mb-1 h-11",
+                  isActive ? "bg-primary-container text-on-primary-container font-semibold hover:bg-primary-container/90" : "text-on-surface-variant font-normal hover:bg-surface-container-low hover:text-on-surface"
                 )}
                 asChild
               >
@@ -78,14 +79,14 @@ export function Sidebar() {
   const { can, isSuperAdmin } = usePermissions();
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-card px-3 py-4">
-      <div className="mb-8 px-4">
+    <div className="flex h-full w-64 flex-col bg-surface border-r border-outline-variant py-4 shadow-sm">
+      <div className="mb-8 px-6">
         <h2 className="text-2xl font-bold tracking-tight text-primary">
           Workshop Pro
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-4">
         <div className="space-y-6">
           {NAV_SECTIONS.map((section, index) => {
             // Filter sections for SuperAdmin
@@ -110,6 +111,11 @@ export function Sidebar() {
             );
           })}
         </div>
+      </div>
+
+      <div className="mt-auto px-6 pt-4 border-t border-outline-variant flex items-center justify-between">
+        <span className="text-sm text-on-surface-variant font-medium">Theme</span>
+        <ThemeToggle />
       </div>
     </div>
   );

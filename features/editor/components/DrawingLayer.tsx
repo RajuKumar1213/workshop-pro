@@ -167,7 +167,7 @@ export function DrawingLayer() {
           <Text
             {...commonProps}
             text={(el as any).text}
-            fontSize={48}
+            fontSize={32}
             fontFamily="sans-serif"
             fontStyle="bold"
             fill={el.stroke}

@@ -6,6 +6,8 @@ import { ProductStep } from './product-step';
 import { DesignStep } from './design-step';
 import { useEditorStore } from '@/features/editor/store/useEditorStore';
 import { Trash2, Edit, Plus, Image as ImageIcon, ArrowRight } from 'lucide-react';
+import { MobileHeader } from '@/components/layout/mobile-header';
+import { Button } from '@/components/ui/button';
 
 export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNext: (data: any) => void, onBack: () => void, defaultData?: any[] }) {
   const [items, setItems] = useState<any[]>(defaultData);
@@ -87,35 +89,30 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
 
   if (view === 'design') {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between bg-muted/50 p-4 rounded-xl border">
-          <div>
-            <h3 className="font-bold">Designing: {draftItem?.product?.category || 'Custom Item'}</h3>
-            <p className="text-sm text-muted-foreground">Changes to the canvas are auto-saved to this product.</p>
-          </div>
-          <button 
-            onClick={() => setView('product')}
-            className="text-sm border px-4 py-2 rounded-lg bg-background hover:bg-muted font-medium transition-colors"
-          >
-            Change Product Type
-          </button>
-        </div>
-        
-        {/* We override onNext to act as our Save & Return */}
-        <DesignStep 
-          onNext={handleSaveAndReturn} 
-          onBack={() => setView('product')} 
-          defaultData={draftItem?.design} 
-          productData={draftItem?.product} 
-        />
-      </div>
+      <DesignStep 
+        onNext={handleSaveAndReturn} 
+        onBack={() => setView('product')} 
+        defaultData={draftItem?.design} 
+        productData={draftItem?.product} 
+      />
     );
   }
 
   // LIST VIEW
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between border-b pb-4">
+    <div className="flex-1 w-full flex flex-col relative h-full">
+      <MobileHeader 
+        title="Order Items" 
+        onBack={onBack} 
+        rightAction={
+          <Button variant="ghost" size="icon" onClick={handleAddProduct} className="text-primary hover:bg-surface-container-low w-10 h-10 rounded-full">
+            <Plus className="w-5 h-5" />
+          </Button>
+        } 
+      />
+
+      <div className="space-y-6 animate-in fade-in duration-300 p-4 md:p-0 flex-1 overflow-y-auto">
+        <div className="hidden md:flex items-center justify-between border-b border-outline-variant pb-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">Order Items</h2>
           <p className="text-muted-foreground text-sm mt-1">Manage all products and gates for this order.</p>
@@ -130,7 +127,7 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((item, index) => (
-          <div key={item.id || index} className="bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+          <div key={item.id || index} className="bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
             <div className="h-40 bg-muted/30 relative flex items-center justify-center border-b">
               {item.product?.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -141,14 +138,14 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                   onClick={() => handleEditItem(index)}
-                  className="p-1.5 bg-background border rounded-md shadow-sm hover:text-primary transition-colors"
+                  className="p-1.5 bg-surface border border-outline-variant rounded-md shadow-sm hover:text-primary transition-colors"
                   title="Edit Product"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={() => handleDeleteItem(index)}
-                  className="p-1.5 bg-background border rounded-md shadow-sm hover:text-destructive transition-colors"
+                  className="p-1.5 bg-surface border border-outline-variant rounded-md shadow-sm hover:text-destructive transition-colors"
                   title="Delete Product"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -173,7 +170,7 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
 
         <div 
           onClick={handleAddProduct}
-          className="border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary hover:bg-primary/5 transition-all min-h-[250px] text-muted-foreground hover:text-primary group"
+          className="border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary hover:bg-surface-container-low transition-all min-h-[250px] text-muted-foreground hover:text-primary group bg-surface"
         >
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Plus className="w-6 h-6" />
@@ -192,6 +189,7 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
         >
           Proceed to Attachments <ArrowRight className="w-4 h-4" />
         </button>
+      </div>
       </div>
     </div>
   );

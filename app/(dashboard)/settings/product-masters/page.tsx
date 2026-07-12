@@ -112,7 +112,7 @@ export default function ProductMastersPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-6">
           {/* Add Category Section */}
-          <div className="bg-card border rounded-lg p-5 space-y-4 shadow-sm h-fit">
+          <div className="bg-surface border border-outline-variant rounded-xl p-md space-y-4 shadow-sm h-fit">
             <h3 className="font-semibold text-lg">Add Category</h3>
             <div className="space-y-2">
               <label className="text-sm font-medium">New Category Name</label>
@@ -132,7 +132,7 @@ export default function ProductMastersPage() {
           </div>
 
           {/* Upload Section */}
-          <div className="bg-card border rounded-lg p-5 space-y-4 shadow-sm h-fit">
+          <div className="bg-surface border border-outline-variant rounded-xl p-md space-y-4 shadow-sm h-fit">
             <h3 className="font-semibold text-lg">Upload New Image</h3>
             
             <div className="space-y-2">
@@ -181,7 +181,7 @@ export default function ProductMastersPage() {
         </div>
 
         {/* Images Display Section */}
-        <div className="md:col-span-2 bg-card border rounded-lg p-5 shadow-sm min-h-[400px]">
+        <div className="md:col-span-2 bg-surface border border-outline-variant rounded-xl p-md shadow-sm min-h-[400px]">
           <div className="flex justify-between items-center mb-6 border-b pb-4">
             <div>
               <h3 className="font-semibold text-lg">Master Images</h3>

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -80,14 +81,29 @@ export function LoginForm() {
             )}
           </div>
           <div className="grid gap-1">
-            <Input
-              id="password"
-              placeholder="Password"
-              type="password"
-              autoComplete="current-password"
-              disabled={isLoading}
-              {...form.register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                placeholder="Password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                disabled={isLoading}
+                {...form.register("password")}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
             {form.formState.errors.password && (
               <p className="text-sm text-red-500">
                 {form.formState.errors.password.message}

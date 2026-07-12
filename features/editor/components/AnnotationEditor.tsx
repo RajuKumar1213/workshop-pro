@@ -16,9 +16,12 @@ interface AnnotationEditorProps {
     left: { top: number | ''; middle: number | ''; bottom: number | '' };
     right: { top: number | ''; middle: number | ''; bottom: number | '' };
   };
+  kabja?: 'none' | 'left' | 'right';
+  hasVentilator?: boolean;
+  ventilatorImageUrl?: string;
 }
 
-export function AnnotationEditor({ imageUrl, className = '', canvasWidth, canvasHeight, unit, holfass }: AnnotationEditorProps) {
+export function AnnotationEditor({ imageUrl, className = '', canvasWidth, canvasHeight, unit, holfass, kabja, hasVentilator, ventilatorImageUrl }: AnnotationEditorProps) {
   const { scale, setScale, setPosition, undo, redo } = useEditorStore();
 
   useEffect(() => {
@@ -50,7 +53,7 @@ export function AnnotationEditor({ imageUrl, className = '', canvasWidth, canvas
   };
 
   return (
-    <div className={`relative w-full h-[600px] flex flex-col ${className}`}>
+    <div className={`relative w-full h-full flex flex-col ${className}`}>
       <EditorToolbar />
       
       {/* Zoom Controls */}
@@ -70,7 +73,7 @@ export function AnnotationEditor({ imageUrl, className = '', canvasWidth, canvas
         </Button>
       </div>
 
-      <EditorCanvas imageUrl={imageUrl} canvasWidth={canvasWidth} canvasHeight={canvasHeight} unit={unit} holfass={holfass} />
+      <EditorCanvas imageUrl={imageUrl} canvasWidth={canvasWidth} canvasHeight={canvasHeight} unit={unit} holfass={holfass} kabja={kabja} hasVentilator={hasVentilator} ventilatorImageUrl={ventilatorImageUrl} />
     </div>
   );
 }

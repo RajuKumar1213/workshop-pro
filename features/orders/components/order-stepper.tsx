@@ -27,9 +27,9 @@ export function OrderStepper() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 space-y-6">
-      {/* Stepper Header */}
-      <div className="flex justify-between items-center mb-12 relative px-4">
+    <div className="w-full max-w-7xl mx-auto md:p-4 md:space-y-6 h-full flex flex-col">
+      {/* Stepper Header (Hidden on Mobile) */}
+      <div className="hidden md:flex justify-between items-center mb-12 relative px-4">
         {steps.map((step, index) => {
           const isActive = index === currentStep;
           const isCompleted = index < currentStep;
@@ -77,7 +77,7 @@ export function OrderStepper() {
       </div>
 
       {/* Stepper Content */}
-      <div className="bg-card text-card-foreground border rounded-lg p-6 shadow-sm min-h-[400px]">
+      <div className="md:bg-surface md:border border-outline-variant md:rounded-xl md:p-6 md:shadow-sm min-h-[400px] flex-1 flex flex-col w-full relative">
         {currentStep === 0 && <CustomerStep onNext={handleNext} defaultData={orderData.customer} />}
         {currentStep === 1 && <ProductsManagerStep onNext={handleNext} onBack={handleBack} defaultData={orderData.items} />}
         {currentStep === 2 && <AttachmentsStep onNext={handleNext} onBack={handleBack} defaultData={orderData.attachments} />}

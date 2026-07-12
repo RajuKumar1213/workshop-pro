@@ -1,7 +1,7 @@
 "use client";
 
-import { useTheme } from "next-themes";
-import { Bell, Search, Sun, Moon, Menu } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
+import { ThemeToggle } from "@/components/common/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,7 +23,6 @@ interface TopNavbarProps {
 }
 
 export function TopNavbar({ onMenuClick }: TopNavbarProps) {
-  const { setTheme, theme } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -37,7 +36,7 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background px-4 shadow-sm md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-outline-variant bg-surface px-4 shadow-sm md:px-6">
       <div className="flex items-center gap-4">
         {onMenuClick && (
           <Button
@@ -55,21 +54,13 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
           <Input
             type="search"
             placeholder="Search..."
-            className="w-full bg-muted/50 pl-9 md:w-[300px] lg:w-[400px]"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-full pl-9 md:w-[300px] lg:w-[400px] focus:border-primary transition-colors"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
+        <ThemeToggle className="hidden md:flex" />
 
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
