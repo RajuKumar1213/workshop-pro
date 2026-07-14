@@ -19,7 +19,7 @@ export default function DashboardLayout({
     { label: "Dashboard", href: "/dashboard", icon: "dashboard", fill: true },
     { label: "Orders", href: "/orders/new", icon: "factory", fill: false },
     { label: "Customers", href: "/customers", icon: "group", fill: false },
-    { label: "Settings", href: "/settings/materials", icon: "settings", fill: false },
+    { label: "Settings", href: "/settings", icon: "settings", fill: false },
     { label: "Profile", href: "/profile", icon: "person", fill: false },
   ];
 
@@ -50,7 +50,10 @@ export default function DashboardLayout({
           isFullScreenMobile ? "hidden" : "flex md:hidden"
         )}>
           {navItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+            const isActive = item.href === '/dashboard' 
+              ? pathname === '/dashboard' 
+              : pathname.startsWith(item.href);
+              
             return (
               <Link href={item.href} key={item.label}>
                 <div className={`flex flex-col items-center justify-center rounded-xl px-3 py-1 active:scale-90 duration-150 ease-in-out w-[72px] ${isActive ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:text-primary'}`}>

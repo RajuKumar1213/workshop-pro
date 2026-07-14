@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { MobileHeader } from '@/components/layout/mobile-header';
 import { ArrowRight, Image as ImageIcon, Mic } from 'lucide-react';
 
-export function AttachmentsStep({ onNext, onBack, defaultData }: { onNext: (data: any) => void, onBack: () => void, defaultData?: any }) {
+export function AttachmentsStep({ orderId, onNext, onBack, defaultData }: { orderId?: string, onNext: (data: any) => void, onBack: () => void, defaultData?: any }) {
   
   const handleProceed = () => {
     onNext({ attachments: { files: [], voiceNote: null } });

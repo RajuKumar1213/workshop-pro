@@ -23,6 +23,27 @@ export class CustomerRepository {
     });
   }
 
+  static async findByMobile(mobile: string) {
+    return db.query.customers.findFirst({
+      where: (t, { eq }) => eq(t.mobile, mobile),
+      with: {
+        orders: {
+          orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+          limit: 5,
+        }
+      }
+    });
+  }
+
+  static async update(id: string, input: Partial<Omit<CustomerInsert, 'id'>>) {
+    const [customer] = await db
+      .update(customers)
+      .set({ ...input, updatedAt: new Date() })
+      .where(eq(customers.id, id))
+      .returning();
+    return customer;
+  }
+
   static async search(query: string, limit = 10) {
     return db.query.customers.findMany({
       where: (t) =>

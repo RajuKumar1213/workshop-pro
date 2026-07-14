@@ -5,20 +5,107 @@ import { CustomerStep } from './steps/customer-step';
 import { ProductsManagerStep } from './steps/products-manager-step';
 import { AttachmentsStep } from './steps/attachments-step';
 import { CommercialStep } from './steps/commercial-step';
+import { toast } from 'sonner';
+import { Loader2, CheckCircle2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useCreateCustomer } from '@/hooks/api/use-customers';
+import { useCreateOrder, useGetOrder } from '@/hooks/api/use-orders';
+import { get } from '@/lib/api/axios';
 
 const steps = ['Customer', 'Products', 'Attachments', 'Commercial'];
 
 export function OrderStepper() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [orderData, setOrderData] = useState<any>({});
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleNext = (stepData: any) => {
-    setOrderData({ ...orderData, ...stepData });
-    if (currentStep < steps.length - 1) {
+  const { mutateAsync: createCustomerAsync } = useCreateCustomer();
+  const { mutateAsync: createOrderAsync } = useCreateOrder();
+
+  const handleResumeDraft = async (draftOrderId: string) => {
+    setIsProcessing(true);
+    try {
+      const res = await get<any>(`/orders/${draftOrderId}`);
+      if (res?.success && res?.data) {
+        const order = res.data;
+        setOrderId(order.id);
+        setOrderData({
+          customer: order.customer,
+          items: order.items || []
+        });
+        setCurrentStep(1); // Jump to products
+      } else {
+        toast.error("Failed to load draft");
+      }
+    } catch (e) {
+      toast.error("Error loading draft");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleNext = async (stepData: any) => {
+    const newOrderData = { ...orderData, ...stepData };
+    setOrderData(newOrderData);
+    
+    if (currentStep === 0) {
+      // Customer step to Products step
+      setIsProcessing(true);
+      try {
+        let customerId = stepData.customer.id;
+        
+        // 1. Create or get customer
+        if (!customerId) {
+          try {
+            const custRes = await createCustomerAsync(stepData.customer);
+            if (custRes.success) {
+              customerId = custRes.data.id;
+              newOrderData.customer.id = customerId;
+              setOrderData(newOrderData);
+            } else {
+              throw new Error("Failed to save customer");
+            }
+          } catch (e) {
+            toast.error("Failed to save customer");
+            setIsProcessing(false);
+            return;
+          }
+        }
+        
+        // 2. Create Draft Order if not already created
+        if (!orderId) {
+          try {
+            const orderResData = await createOrderAsync({ customerId });
+            if (orderResData.success) {
+              setOrderId(orderResData.data.id);
+            } else {
+              throw new Error("Failed to create draft order");
+            }
+          } catch (e) {
+            toast.error("Failed to create draft order");
+            setIsProcessing(false);
+            return;
+          }
+        }
+        
+        setCurrentStep(currentStep + 1);
+      } catch (e) {
+        toast.error("An error occurred");
+      } finally {
+        setIsProcessing(false);
+      }
+    } else if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      console.log('Final Order Data:', { ...orderData, ...stepData });
-      // Submit to API
+      // Final Submit to API (Finalize order state if needed)
+      // Since it's auto-saved, we just show success and redirect
+      setIsSuccess(true);
+      setTimeout(() => {
+         router.push('/');
+      }, 2000);
     }
   };
 
@@ -78,10 +165,30 @@ export function OrderStepper() {
 
       {/* Stepper Content */}
       <div className="md:bg-surface md:border border-outline-variant md:rounded-xl md:p-6 md:shadow-sm min-h-[400px] flex-1 flex flex-col w-full relative">
-        {currentStep === 0 && <CustomerStep onNext={handleNext} defaultData={orderData.customer} />}
-        {currentStep === 1 && <ProductsManagerStep onNext={handleNext} onBack={handleBack} defaultData={orderData.items} />}
-        {currentStep === 2 && <AttachmentsStep onNext={handleNext} onBack={handleBack} defaultData={orderData.attachments} />}
-        {currentStep === 3 && <CommercialStep onNext={handleNext} onBack={handleBack} defaultData={orderData.commercial} />}
+        {isProcessing && (
+           <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-xl">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+           </div>
+        )}
+        
+        {isSuccess ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center animate-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
+              <CheckCircle2 className="w-12 h-12" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Order Captured!</h2>
+            <p className="text-muted-foreground mb-8 max-w-sm">The order has been successfully saved as a draft. You can process it from the dashboard.</p>
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <p className="text-xs text-muted-foreground mt-2">Redirecting to Dashboard...</p>
+          </div>
+        ) : (
+          <>
+            {currentStep === 0 && <CustomerStep onNext={handleNext} onResumeDraft={handleResumeDraft} defaultData={orderData.customer} />}
+            {currentStep === 1 && <ProductsManagerStep orderId={orderId!} onNext={handleNext} onBack={handleBack} defaultData={orderData.items} />}
+            {currentStep === 2 && <AttachmentsStep orderId={orderId!} onNext={handleNext} onBack={handleBack} defaultData={orderData.attachments} />}
+            {currentStep === 3 && <CommercialStep orderId={orderId!} onNext={handleNext} onBack={handleBack} defaultData={orderData.commercial} />}
+          </>
+        )}
       </div>
     </div>
   );

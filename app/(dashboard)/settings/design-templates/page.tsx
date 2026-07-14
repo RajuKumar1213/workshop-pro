@@ -10,12 +10,8 @@ export default function ProductMastersPage() {
   const [masters, setMasters] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   
-  // New category state
-  const [newCategory, setNewCategory] = useState('');
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-
   // Upload state
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
@@ -42,40 +38,17 @@ export default function ProductMastersPage() {
     fetchMasters();
   }, []);
 
-  const handleAddCategory = async () => {
-    if (!newCategory.trim()) return toast.error('Please enter a category name');
-    
-    setIsAddingCategory(true);
-    try {
-      const res = await fetch('/api/masters/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: newCategory }),
-      });
-      const data = await res.json();
-      
-      if (data.success) {
-        toast.success('Category created successfully');
-        setNewCategory('');
-        fetchMasters();
-      } else {
-        toast.error(data.error || 'Failed to create category');
-      }
-    } catch (error) {
-      toast.error('An error occurred while creating category');
-    } finally {
-      setIsAddingCategory(false);
-    }
-  };
-
   const handleUpload = async () => {
-    if (!file) return toast.error('Please select a file to upload');
+    if (files.length === 0) return toast.error('Please select files to upload');
     if (!selectedCategory) return toast.error('Please select a category or create one first');
 
     setIsUploading(true);
     const formData = new FormData();
-    formData.append('file', file);
     formData.append('category', selectedCategory);
+    
+    files.forEach(file => {
+      formData.append('files', file);
+    });
 
     try {
       const res = await fetch('/api/masters/products/images', {
@@ -85,8 +58,8 @@ export default function ProductMastersPage() {
       const data = await res.json();
 
       if (data.success) {
-        toast.success('Image uploaded successfully');
-        setFile(null);
+        toast.success(`${files.length} images uploaded successfully`);
+        setFiles([]);
         fetchMasters(); // Refresh
       } else {
         toast.error(data.error || 'Failed to upload image');
@@ -105,31 +78,13 @@ export default function ProductMastersPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
       <PageHeader 
-        title="Product Masters (Super Admin)" 
-        description="Manage product categories and upload design images."
+        title="Design Templates" 
+        description="Upload design template images for product categories."
       />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-6">
-          {/* Add Category Section */}
-          <div className="bg-surface border border-outline-variant rounded-xl p-md space-y-4 shadow-sm h-fit">
-            <h3 className="font-semibold text-lg">Add Category</h3>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">New Category Name</label>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  className="flex-1 p-2 border rounded-md outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="e.g. Main Gate"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                />
-                <Button size="icon" onClick={handleAddCategory} disabled={!newCategory.trim() || isAddingCategory}>
-                  {isAddingCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                </Button>
-              </div>
-            </div>
-          </div>
+
 
           {/* Upload Section */}
           <div className="bg-surface border border-outline-variant rounded-xl p-md space-y-4 shadow-sm h-fit">
@@ -154,16 +109,26 @@ export default function ProductMastersPage() {
                 <input 
                   type="file" 
                   accept="image/*" 
+                  multiple
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  onChange={(e) => e.target.files && setFile(e.target.files[0])}
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      const selectedFiles = Array.from(e.target.files);
+                      if (selectedFiles.length > 10) {
+                        toast.error('You can only upload up to 10 images at a time');
+                        return;
+                      }
+                      setFiles(selectedFiles);
+                    }
+                  }}
                   disabled={!selectedCategory}
                 />
-                {file ? (
-                  <p className="text-sm text-primary font-medium truncate">{file.name}</p>
+                {files.length > 0 ? (
+                  <p className="text-sm text-primary font-medium truncate">{files.length} {files.length === 1 ? 'file' : 'files'} selected</p>
                 ) : (
                   <div className="text-muted-foreground flex flex-col items-center">
                     <Upload className="w-6 h-6 mb-2" />
-                    <span className="text-sm">Click to select an image</span>
+                    <span className="text-sm">Click to select up to 10 images</span>
                   </div>
                 )}
               </div>
@@ -172,10 +137,10 @@ export default function ProductMastersPage() {
             <Button 
               className="w-full mt-4" 
               onClick={handleUpload} 
-              disabled={!file || !selectedCategory || isUploading}
+              disabled={files.length === 0 || !selectedCategory || isUploading}
             >
               {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Upload to Cloudinary
+              Upload
             </Button>
           </div>
         </div>

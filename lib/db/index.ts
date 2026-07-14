@@ -12,12 +12,23 @@ import * as schema from '@/drizzle/schema';
  * This module is marked `server-only` — it will throw a build error
  * if accidentally imported in a Client Component.
  */
-const pool = new Pool({
+const poolConfig = {
   connectionString: process.env.DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+  connectionTimeoutMillis: 10000, // Increased to 10s for serverless wake-up
+};
+
+// Global singleton to prevent connection leaks during Next.js HMR in development
+const globalForDb = globalThis as unknown as {
+  pool: Pool | undefined;
+};
+
+const pool = globalForDb.pool ?? new Pool(poolConfig);
+
+if (process.env.NODE_ENV !== "production") {
+  globalForDb.pool = pool;
+}
 
 pool.on('error', (err: Error) => {
   console.error('Unexpected error on idle database client:', err);

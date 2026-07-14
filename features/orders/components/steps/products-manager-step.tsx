@@ -5,15 +5,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { ProductStep } from './product-step';
 import { DesignStep } from './design-step';
 import { useEditorStore } from '@/features/editor/store/useEditorStore';
+import { useUpdateOrder } from '@/hooks/api/use-orders';
 import { Trash2, Edit, Plus, Image as ImageIcon, ArrowRight } from 'lucide-react';
 import { MobileHeader } from '@/components/layout/mobile-header';
 import { Button } from '@/components/ui/button';
 
-export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNext: (data: any) => void, onBack: () => void, defaultData?: any[] }) {
+export function ProductsManagerStep({ orderId, onNext, onBack, defaultData = [] }: { orderId?: string, onNext: (data: any) => void, onBack: () => void, defaultData?: any[] }) {
   const [items, setItems] = useState<any[]>(defaultData);
   const [view, setView] = useState<'list' | 'product' | 'design'>('list');
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [draftItem, setDraftItem] = useState<any>(null);
+  
+  const { mutate: updateOrder } = useUpdateOrder();
 
   // Auto-redirect to add product if list is empty
   useEffect(() => {
@@ -21,6 +24,9 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
       handleAddProduct();
     }
   }, [items.length, view]);
+
+  // Removed on-mount auto save to prevent wiping out data
+  // We now explicitly save when items are modified.
 
   const handleAddProduct = () => {
     setDraftItem({ id: uuidv4() });
@@ -42,6 +48,7 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
     newItems.splice(index, 1);
     setItems(newItems);
     onNext({ items: newItems }); // Auto-save list state
+    if (orderId) updateOrder({ id: orderId, data: { items: newItems } });
   };
 
   const handleProductSubmit = (data: any) => {
@@ -71,6 +78,7 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
     
     setItems(newItems);
     onNext({ items: newItems }); // Push state to parent
+    if (orderId) updateOrder({ id: orderId, data: { items: newItems } });
     setView('list');
   };
 
@@ -92,6 +100,37 @@ export function ProductsManagerStep({ onNext, onBack, defaultData = [] }: { onNe
       <DesignStep 
         onNext={handleSaveAndReturn} 
         onBack={() => setView('product')} 
+        onChange={(designData) => {
+          // Auto-save the design draft into the main items array without leaving the view
+          setDraftItem((prevDraft: any) => {
+            if (!prevDraft) return null;
+            const currentElements = useEditorStore.getState().elements;
+            const finalDesign = { ...designData.design, elements: currentElements };
+            const updatedDraft = { ...prevDraft, design: finalDesign };
+            
+            setItems((prevItems: any[]) => {
+              const existingIndex = prevItems.findIndex(i => i.id === updatedDraft.id);
+              const newItems = [...prevItems];
+              if (existingIndex >= 0) {
+                 newItems[existingIndex] = updatedDraft;
+              } else {
+                 newItems.push(updatedDraft);
+                 setEditingIndex(newItems.length - 1);
+              }
+              return newItems;
+            });
+            
+            // Background auto-save for the current draft
+            if (orderId) {
+              setItems((latestItems) => {
+                updateOrder({ id: orderId, data: { items: latestItems } });
+                return latestItems;
+              });
+            }
+            
+            return updatedDraft;
+          });
+        }}
         defaultData={draftItem?.design} 
         productData={draftItem?.product} 
       />

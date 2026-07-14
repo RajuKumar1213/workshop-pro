@@ -1,57 +1,43 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AnnotationEditor } from '@/features/editor/components/AnnotationEditor';
+import { useEditorStore } from '@/features/editor/store/useEditorStore';
+import { useGetMaterials, useGetProducts } from '@/hooks/api/use-masters';
+import { canShowKabjaAndHolfass } from '@/lib/constants/product-rules';
 import { MobileHeader } from '@/components/layout/mobile-header';
 import { Button } from '@/components/ui/button';
 
 interface DesignStepProps {
   onNext: (data: any) => void;
   onBack: () => void;
+  onChange?: (data: any) => void;
   defaultData?: any;
   productData?: any;
 }
 
 const UNITS = ['inch', 'cm', 'mm', 'foot', 'meter'];
 
-export function DesignStep({ onNext, onBack, defaultData, productData }: DesignStepProps) {
+export function DesignStep({ onNext, onBack, onChange, defaultData, productData }: DesignStepProps) {
   const category = productData?.category || 'Custom Item';
   const [unit, setUnit] = useState(defaultData?.unit || 'inch');
   const [width, setWidth] = useState<number | string>(defaultData?.width ?? 0);
   const [height, setHeight] = useState<number | string>(defaultData?.height ?? 0);
   const [material, setMaterial] = useState(defaultData?.material || 'Mild Steel');
-  const [materialsList, setMaterialsList] = useState<any[]>([]);
   const [hasVentilator, setHasVentilator] = useState(defaultData?.hasVentilator || false);
   const [ventilatorImageUrl, setVentilatorImageUrl] = useState<string>(defaultData?.ventilatorImageUrl || '');
-  const [ventilatorImages, setVentilatorImages] = useState<any[]>([]);
+
+  const { data: materialsRes } = useGetMaterials();
+  const { data: productsRes } = useGetProducts();
+
+  const materialsList = materialsRes?.data || [];
+  const ventilatorImages = productsRes?.data?.find((m: any) => m.category.toLowerCase().includes('ventilator'))?.images || [];
 
   useEffect(() => {
-    // Fetch materials
-    fetch('/api/masters/materials')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setMaterialsList(data.data);
-          if (!defaultData?.material && data.data.length > 0) {
-            setMaterial(data.data[0].name);
-          }
-        }
-      })
-      .catch(console.error);
-
-    // Fetch ventilator images from products master
-    fetch('/api/masters/products')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const vent = data.data.find((m: any) => m.category.toLowerCase().includes('ventilator'));
-          if (vent && vent.images) {
-            setVentilatorImages(vent.images);
-          }
-        }
-      })
-      .catch(console.error);
-  }, [defaultData?.material]);
+    if (!material && materialsList.length > 0) {
+      setMaterial(materialsList[0].name);
+    }
+  }, [materialsList, material]);
   
   const [holfass, setHolfass] = useState<{
     side: 'none' | 'left' | 'right' | 'both';
@@ -63,6 +49,32 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
     right: { top: '', middle: '', bottom: '' }
   });
   const [kabja, setKabja] = useState<'none' | 'left' | 'right'>(defaultData?.kabja || 'none');
+
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    if (!onChangeRef.current) return;
+    const elements = useEditorStore.getState().elements;
+    const timer = setTimeout(() => {
+      if (onChangeRef.current) {
+        onChangeRef.current({ design: { width, height, unit, material, templateId: category, holfass, kabja, hasVentilator, ventilatorImageUrl, elements } });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [width, height, unit, material, holfass, kabja, hasVentilator, ventilatorImageUrl, category]);
+
+  // Subscribe to canvas elements changes
+  useEffect(() => {
+    if (!onChangeRef.current) return;
+    return useEditorStore.subscribe((state: any, prevState: any) => {
+      if (state.elements !== prevState.elements && onChangeRef.current) {
+        onChangeRef.current({ design: { width, height, unit, material, templateId: category, holfass, kabja, hasVentilator, ventilatorImageUrl, elements: state.elements } });
+      }
+    });
+  }, [width, height, unit, material, holfass, kabja, hasVentilator, ventilatorImageUrl, category]);
 
   const handleProceed = () => {
     onNext({ design: { width, height, unit, material, templateId: category, holfass, kabja, hasVentilator, ventilatorImageUrl } });
@@ -168,7 +180,7 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
                     {materialsList.length === 0 ? (
                       <option value="Mild Steel">Mild Steel</option>
                     ) : (
-                      materialsList.map(m => (
+                      materialsList.map((m: any) => (
                         <option key={m.id} value={m.name}>{m.name}</option>
                       ))
                     )}
@@ -199,7 +211,7 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
                   <div className="mt-2 p-3 bg-surface-container-lowest border rounded-xl shadow-sm">
                      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 block">Select Ventilator Design</label>
                      <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
-                       {ventilatorImages.map(img => (
+                       {ventilatorImages.map((img: any) => (
                           <div 
                             key={img.id} 
                             onClick={() => setVentilatorImageUrl(img.imageUrl)}
@@ -221,8 +233,9 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
             )}
 
             {/* Kabja Section */}
-            <div className="flex flex-col gap-1 mt-2">
-              <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Kabja (Hinges)</label>
+            {canShowKabjaAndHolfass(category) && (
+              <div className="flex flex-col gap-1 mt-2">
+                <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Kabja (Hinges)</label>
               <div className="flex flex-wrap gap-2 mb-2">
                  {['none', 'left', 'right'].map((side) => (
                     <button 
@@ -236,12 +249,14 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
                       {side}
                     </button>
                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Holfass Section */}
-            <div className="flex flex-col gap-1 mt-2">
-              <div className="flex items-center justify-between">
+            {canShowKabjaAndHolfass(category) && (
+              <div className="flex flex-col gap-1 mt-2">
+                <div className="flex items-center justify-between">
                 <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Holfass Options</label>
                 {(holfass.side === 'left' || holfass.side === 'right' || holfass.side === 'both') && (
                   <button 
@@ -287,6 +302,7 @@ export function DesignStep({ onNext, onBack, defaultData, productData }: DesignS
                 </div>
               )}
             </div>
+            )}
 
           </div>
         </div>

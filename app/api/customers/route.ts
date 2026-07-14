@@ -35,7 +35,16 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('query') || '';
+    const mobile = searchParams.get('mobile') || '';
     
+    if (mobile) {
+      const customer = await CustomerRepository.findByMobile(mobile);
+      if (customer) {
+        return NextResponse.json({ success: true, data: customer });
+      }
+      return NextResponse.json({ success: false, error: 'Customer not found' }, { status: 404 });
+    }
+
     const customers = await CustomerRepository.search(query);
     return NextResponse.json({ success: true, data: customers });
   } catch (error: any) {

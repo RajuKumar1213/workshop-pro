@@ -11,6 +11,7 @@ export function ProductStep({ onNext, onBack, defaultData }: { onNext: (data: an
   const [masters, setMasters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Note: We're skipping the image selection step in this UI revamp as per the HTML provided,
   // but we can preserve the underlying data model requirement if needed by passing an empty string or picking the first one.
@@ -120,7 +121,7 @@ export function ProductStep({ onNext, onBack, defaultData }: { onNext: (data: an
 
       {/* Image Selection Modal */}
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-        <DialogContent className="w-full max-w-4xl h-[90vh] md:h-[80vh] flex flex-col p-0 gap-0 overflow-hidden top-auto bottom-0 translate-y-0 rounded-t-2xl rounded-b-none md:top-[50%] md:bottom-auto md:-translate-y-1/2 md:rounded-xl">
+        <DialogContent className="w-full max-w-4xl h-[92vh] md:h-[90vh] flex flex-col p-0 gap-0 overflow-hidden top-auto bottom-0 translate-y-0 rounded-t-2xl rounded-b-none md:top-[50%] md:bottom-auto md:-translate-y-1/2 md:rounded-xl">
           <DialogHeader className="p-4 md:p-6 border-b shrink-0 bg-surface">
             <DialogTitle className="font-headline-sm text-headline-sm text-on-surface">Select a Design</DialogTitle>
             <DialogDescription className="font-body-md text-body-md text-on-surface-variant">
@@ -141,11 +142,25 @@ export function ProductStep({ onNext, onBack, defaultData }: { onNext: (data: an
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={img.imageUrl} alt="Design reference" className="w-full h-full object-cover" />
+                  
+                  {/* Select indicator */}
                   {selectedImageUrl === img.imageUrl && (
                     <div className="absolute top-2 right-2 bg-primary text-on-primary rounded-full p-1 shadow-sm flex items-center justify-center w-6 h-6">
                       <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
                     </div>
                   )}
+
+                  {/* Preview Eye Button */}
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreviewImage(img.imageUrl);
+                    }}
+                    className="absolute bottom-2 right-2 bg-black/40 hover:bg-black/60 text-white rounded p-1.5 shadow-sm flex items-center justify-center backdrop-blur-sm transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">visibility</span>
+                  </button>
                 </div>
               ))}
             </div>
@@ -157,6 +172,32 @@ export function ProductStep({ onNext, onBack, defaultData }: { onNext: (data: an
               handleSubmit();
             }}>Confirm Selection</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full Screen Image Preview Modal */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="w-full max-w-full h-[100dvh] md:h-screen p-0 m-0 border-none bg-black/95 flex flex-col justify-center items-center rounded-none sm:rounded-none max-h-none overflow-hidden">
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPreviewImage(null);
+            }}
+            className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-sm transition-colors"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
+          
+          {previewImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img 
+              src={previewImage} 
+              alt="Design Preview" 
+              className="w-full h-full object-contain"
+            />
+          )}
         </DialogContent>
       </Dialog>
 

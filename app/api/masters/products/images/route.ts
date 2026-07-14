@@ -8,18 +8,11 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const category = formData.get('category') as string;
-    const file = formData.get('file') as File;
+    const files = formData.getAll('files') as File[];
 
-    if (!category || !file) {
-      return NextResponse.json({ success: false, error: 'Category and file are required' }, { status: 400 });
+    if (!category || files.length === 0) {
+      return NextResponse.json({ success: false, error: 'Category and at least one file are required' }, { status: 400 });
     }
-
-    // Read file buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Upload to Cloudinary
-    const imageUrl = await uploadToCloudinary(buffer, file.type, 'workshop/product-masters');
 
     // Find or create product master for this category
     let masterResult = await db.query.productMasters.findFirst({
@@ -34,13 +27,28 @@ export async function POST(req: NextRequest) {
       masterResult = newMaster;
     }
 
-    // Add image to this master
-    const [newImage] = await db.insert(productMasterImages).values({
+    const uploadedImages = [];
+
+    // Process each file
+    for (const file of files) {
+      // Read file buffer
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      // Upload to Cloudinary
+      const imageUrl = await uploadToCloudinary(buffer, file.type, 'workshop/product-masters');
+      uploadedImages.push(imageUrl);
+    }
+
+    // Add images to this master
+    const imageRecordsToInsert = uploadedImages.map(imageUrl => ({
       productMasterId: masterResult.id,
       imageUrl,
-    }).returning();
+    }));
 
-    return NextResponse.json({ success: true, data: newImage });
+    const newImages = await db.insert(productMasterImages).values(imageRecordsToInsert).returning();
+
+    return NextResponse.json({ success: true, data: newImages });
 
   } catch (error: any) {
     console.error('Error uploading product master image:', error);

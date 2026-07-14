@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MobileHeader } from '@/components/layout/mobile-header';
+import { useUpdateOrder } from '@/hooks/api/use-orders';
 import { Check } from 'lucide-react';
 
 
-export function CommercialStep({ onNext, onBack, defaultData }: { onNext: (data: any) => void, onBack: () => void, defaultData?: any }) {
+export function CommercialStep({ orderId, onNext, onBack, defaultData }: { orderId?: string, onNext: (data: any) => void, onBack: () => void, defaultData?: any }) {
   const [formData, setFormData] = useState(defaultData || {
     rateType: 'per_kg',
     estimatedRate: 0,
@@ -14,9 +15,30 @@ export function CommercialStep({ onNext, onBack, defaultData }: { onNext: (data:
     deadline: '',
   });
 
+  const { mutate: updateOrder } = useUpdateOrder();
+
   const estimatedTotal = formData.rateType === 'per_kg' 
     ? formData.estimatedRate * formData.expectedWeight
     : formData.estimatedRate; // for per_sqft or fixed it would be calculated differently, simplified here
+
+  // Auto-save commercial data
+  useEffect(() => {
+    if (orderId) {
+      const timeoutId = setTimeout(() => {
+        // Prepare data for API
+        const payload = {
+          rateType: formData.rateType,
+          estimatedRate: formData.estimatedRate,
+          expectedWeight: formData.expectedWeight,
+          advanceAmount: formData.advanceAmount,
+          ...(formData.deadline ? { deadline: formData.deadline } : {})
+        };
+
+        updateOrder({ id: orderId, data: payload });
+      }, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData, orderId, updateOrder]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

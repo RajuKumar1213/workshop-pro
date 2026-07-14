@@ -40,7 +40,8 @@ export const orderItems = pgTable("order_items", {
   orderId: varchar("order_id", { length: 36 }).references(() => orders.id).notNull(),
   productType: varchar("product_type", { length: 100 }), // Main Gate, Window, etc.
   category: varchar("category", { length: 100 }),
-  previewImageId: varchar("preview_image_id", { length: 36 }),
+  previewImageId: varchar("preview_image_id", { length: 255 }),
+  designData: jsonb("design_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
