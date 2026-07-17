@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,73 +61,91 @@ export function LoginForm() {
   }
 
   return (
-    <div className="grid gap-6">
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid gap-4">
-          <div className="grid gap-1">
-            <Input
-              id="email"
-              placeholder="name@example.com"
-              type="email"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect="off"
-              disabled={isLoading}
-              {...form.register("email")}
-            />
-            {form.formState.errors.email && (
-              <p className="text-sm text-red-500">
-                {form.formState.errors.email.message}
-              </p>
-            )}
-          </div>
-          <div className="grid gap-1">
-            <div className="relative">
-              <Input
-                id="password"
-                placeholder="Password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                disabled={isLoading}
-                {...form.register("password")}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            {form.formState.errors.password && (
-              <p className="text-sm text-red-500">
-                {form.formState.errors.password.message}
-              </p>
-            )}
-          </div>
-          <Button disabled={isLoading}>
-            {isLoading && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Sign In
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            disabled={isLoading}
-            onClick={() => form.setValue('email', 'superadmin@workshop.pro')}
-            className="mt-2"
-          >
-            Use Super Admin Credentials
-          </Button>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <div className="space-y-2">
+        <label htmlFor="email" className="block text-[13px] font-semibold text-slate-700 tracking-wide">
+          Email
+        </label>
+        <Input
+          id="email"
+          type="email"
+          autoCapitalize="none"
+          autoComplete="email"
+          autoCorrect="off"
+          disabled={isLoading}
+          {...form.register("email")}
+          className="h-12 bg-white border-slate-300 text-slate-900 rounded-lg focus-visible:ring-1 focus-visible:ring-[#2563EB] focus-visible:border-[#2563EB] shadow-sm text-[15px]"
+        />
+        {form.formState.errors.email && (
+          <p className="text-sm text-red-500">
+            {form.formState.errors.email.message}
+          </p>
+        )}
+      </div>
+      
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="block text-[13px] font-semibold text-slate-700 tracking-wide">
+            Password
+          </label>
+          <Link href="/forgot-password" className="text-[13px] font-bold text-[#2563EB] hover:text-blue-700">
+            Forgot Password?
+          </Link>
         </div>
-      </form>
-    </div>
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            placeholder="••••••••"
+            disabled={isLoading}
+            {...form.register("password")}
+            className="h-12 pr-12 bg-white border-slate-300 text-slate-900 rounded-lg focus-visible:ring-1 focus-visible:ring-[#2563EB] focus-visible:border-[#2563EB] shadow-sm text-[15px] placeholder:tracking-[0.3em] placeholder:text-slate-700 placeholder:text-lg"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-800 p-1"
+            tabIndex={-1}
+          >
+            {showPassword ? (
+              <EyeOff className="h-5 w-5" />
+            ) : (
+              <Eye className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+        {form.formState.errors.password && (
+          <p className="text-sm text-red-500">
+            {form.formState.errors.password.message}
+          </p>
+        )}
+      </div>
+
+      <div className="flex items-center space-x-3 pt-1 pb-1">
+        <input 
+          type="checkbox" 
+          id="remember" 
+          className="h-4 w-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer"
+        />
+        <label htmlFor="remember" className="text-[15px] text-slate-600 font-medium cursor-pointer">
+          Remember Me
+        </label>
+      </div>
+
+      <Button 
+        disabled={isLoading} 
+        className="w-full h-[52px] rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-[16px] flex items-center justify-center transition-colors shadow-sm"
+      >
+        {isLoading ? (
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        ) : (
+          <>
+            Login
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </>
+        )}
+      </Button>
+    </form>
   );
 }

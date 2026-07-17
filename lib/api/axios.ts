@@ -13,7 +13,7 @@ import type { ApiResponse } from '@/types/api';
  * - Client-side code only ever talks to /api/* — never directly to auth service.
  */
 const apiClient: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: process.env.NEXT_PUBLIC_AUTH_API_URL ? `${process.env.NEXT_PUBLIC_AUTH_API_URL}/api` : '/api',
   headers: {
     'Content-Type': 'application/json',
   },

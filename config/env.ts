@@ -12,7 +12,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
   // Session cookie signing secret
-  SESSION_SECRET: z.string().min(32),
+  SESSION_SECRET: z.string().min(64),
 
   // Cloudinary (optional for now)
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
@@ -21,6 +21,7 @@ const envSchema = z.object({
 });
 
 const _env = envSchema.safeParse(process.env);
+
 
 if (!_env.success) {
   console.error('❌ Invalid environment variables:', JSON.stringify(_env.error.format(), null, 2));
