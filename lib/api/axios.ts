@@ -13,7 +13,7 @@ import type { ApiResponse } from '@/types/api';
  * - Client-side code only ever talks to /api/* — never directly to auth service.
  */
 const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_AUTH_API_URL ? `${process.env.NEXT_PUBLIC_AUTH_API_URL}/api` : '/api',
+  baseURL: process.env.NEXT_PUBLIC_AUTH_API_URL ? `${process.env.NEXT_PUBLIC_AUTH_API_URL}/api/v1` : '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -75,8 +75,8 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        // Redirect to login on failed refresh
-        if (typeof window !== 'undefined') {
+        // Redirect to login on failed refresh (only if not already on the login page)
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);
